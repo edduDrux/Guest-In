@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import localFont from "next/font/local";
 import "./globals.css";
 import { Comfortaa } from '@next/font/google';
 
@@ -21,9 +20,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body
-        className={`${comfortaa.variable} font-sans antialiased`}
-      >
+      <body className={`${comfortaa.variable} font-sans antialiased`}>
         {children}
       </body>
     </html>
