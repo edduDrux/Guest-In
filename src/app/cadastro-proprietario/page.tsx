@@ -2,7 +2,6 @@
 
 import React, { useState } from 'react';
 import { FiUser, FiMail, FiPhone, FiLock, FiHome, FiMapPin } from 'react-icons/fi';
-import Image from 'next/image';
 
 
 export default function CadastroProprietario() {
