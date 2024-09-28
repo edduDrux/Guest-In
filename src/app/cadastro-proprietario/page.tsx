@@ -5,17 +5,24 @@ import { FiUser, FiMail, FiPhone, FiLock, FiHome, FiMapPin } from 'react-icons/f
 
 
 export default function CadastroProprietario() {
+export default function CadastroProprietario() {
   const [formData, setFormData] = useState({
     nomeCompleto: '',
+    nomeCompleto: '',
     email: '',
+    telefone: '',
     telefone: '',
     cpf: '',
     cnpj: '',
     nomeImobiliaria: '',
     enderecoImobiliaria: '',
     senha: '',
+    nomeImobiliaria: '',
+    enderecoImobiliaria: '',
+    senha: '',
   });
 
+  const [errors, setErrors] = useState<{ [key: string]: string }>({});
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -66,13 +73,81 @@ export default function CadastroProprietario() {
     setErrors(newErrors);
 
     return Object.keys(newErrors).length === 0;
+    setFormData(prevState => ({
+      ...prevState,
+      [name]: value
+    }));
+
+    setErrors(prevErrors => ({
+      ...prevErrors,
+      [name]: ''
+    }));
   };
 
+  const validate = () => {
+    const newErrors: { [key: string]: string } = {};
+
+    const requiredFields = ['nomeCompleto', 'email', 'cpf', 'cnpj', 'senha'];
+    requiredFields.forEach(field => {
+      if (!formData[field as keyof typeof formData]) {
+        newErrors[field] = 'Este campo é obrigatório.';
+      }
+    });
+
+    if (formData.email) {
+      const emailRegex = /\S+@\S+\.\S+/;
+      if (!emailRegex.test(formData.email)) {
+        newErrors.email = 'E-mail inválido.';
+      }
+    }
+
+    if (formData.cpf) {
+      const cpfRegex = /^\d{11}$/;
+      if (!cpfRegex.test(formData.cpf)) {
+        newErrors.cpf = 'CPF deve ter 11 dígitos numéricos.';
+      }
+    }
+
+    if (formData.cnpj) {
+      const cnpjRegex = /^\d{14}$/;
+      if (!cnpjRegex.test(formData.cnpj)) {
+        newErrors.cnpj = 'CNPJ deve ter 14 dígitos numéricos.';
+      }
+    }
+
+    setErrors(newErrors);
+
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (!validate()) {
+
+    if (!validate()) {
       return;
+    }
+
+    try {
+      const response = await fetch('/api/proprietarios', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(formData)
+      });
+
+      if (response.ok) {
+        window.location.href = '/login';
+      } else {
+        const errorData = await response.json();
+        alert(errorData.error || 'Erro ao cadastrar.');
+      }
+    } catch (error) {
+      console.error('Erro ao enviar o formulário', error);
+      alert('Erro ao enviar o formulário.');
     }
 
     try {
@@ -251,4 +326,5 @@ export default function CadastroProprietario() {
       </div>
     </div>
   );
+}
 }
