@@ -22,6 +22,7 @@ model Proprietario {
 
   accounts            Account[]
   sessions            Session[]
+  imoveis             Imovel[]     // Relacionamento com Imovel
 }
 
 model Account {
@@ -59,4 +60,40 @@ model VerificationToken {
   expires    DateTime
 
   @@unique([identifier, token])
+}
+
+model Funcionario {
+  id        Int      @id @default(autoincrement())
+  nome      String
+  email     String   @unique
+  telefone  String?
+  senha     String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Inquilino {
+  id              Int      @id @default(autoincrement())
+  nome            String
+  email           String   @unique
+  telefone        String?
+  cpf             String   @unique
+  dataNascimento  DateTime
+  senha           String
+  isFirstLogin    Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+model Imovel {
+  id             Int      @id @default(autoincrement())
+  nomeImovel     String
+  tipoPropriedade String
+  endereco       String
+  tamanho        String
+  proprietario   Proprietario @relation(fields: [proprietarioId], references: [id])
+  proprietarioId Int
+
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
 }

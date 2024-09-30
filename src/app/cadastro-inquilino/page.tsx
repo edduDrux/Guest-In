@@ -1,151 +1,138 @@
 "use client";
 
-import { useState } from 'react';
+import { useState } from "react";
+import { useSession } from "next-auth/react";
+import { useRouter } from "next/router";
 
-const RegisterTenant = () => {
-  const [formData, setFormData] = useState({
-    fullName: '',
-    email: '',
-    phone: '',
-    cpf: '',
-    birthDate: '',
-    password: '',
-    confirmPassword: '',
-  });
+// Função para validar CPF
+const validarCPF = (cpf: string) => {
+  return /^\d{11}$/.test(cpf); // Verifica se o CPF tem 11 dígitos numéricos
+};
 
-  const [showPassword, setShowPassword] = useState(false);
+export default function CadastroInquilino() {
+  const { data: session, status } = useSession();
+  const router = useRouter();
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
-  };
+  const [nome, setNome] = useState("");
+  const [email, setEmail] = useState("");
+  const [telefone, setTelefone] = useState("");
+  const [cpf, setCpf] = useState("");
+  const [dataNascimento, setDataNascimento] = useState("");
+  const [errorMessage, setErrorMessage] = useState("");
 
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+  if (status === "loading") {
+    return <p>Carregando...</p>;
+  }
+
+  if (status === "unauthenticated") {
+    router.push("/login");
+    return null;
+  }
+
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (formData.password !== formData.confirmPassword) {
-      alert("As senhas não coincidem.");
+
+    // Validações no frontend
+    if (!nome || !email || !telefone || !cpf || !dataNascimento) {
+      setErrorMessage("Por favor, preencha todos os campos.");
       return;
     }
-    console.log(formData);
+
+    if (!validarCPF(cpf)) {
+      setErrorMessage("CPF inválido. Deve ter 11 dígitos numéricos.");
+      return;
+    }
+
+    const emailRegex = /\S+@\S+\.\S+/;
+    if (!emailRegex.test(email)) {
+      setErrorMessage("E-mail inválido.");
+      return;
+    }
+
+    try {
+      const response = await fetch("/api/inquilinos", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ nome, email, telefone, cpf, dataNascimento }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        setNome("");
+        setEmail("");
+        setTelefone("");
+        setCpf("");
+        setDataNascimento("");
+        setErrorMessage(""); // Limpa a mensagem de erro se bem-sucedido
+        alert("Inquilino cadastrado com sucesso.");
+      } else {
+        setErrorMessage(data.error || "Erro ao cadastrar inquilino.");
+      }
+    } catch (error) {
+      setErrorMessage("Erro de rede. Tente novamente.");
+    }
   };
 
   return (
-    <div className=" bg-gradient-to-r from-cyan-500 to-blue-500 flex justify-center items-center p-4">
-      <div className="w-full max-w-lg bg-white rounded-3xl shadow-2xl p-8 md:p-12">
-        <h1 className="text-4xl font-bold text-center text-gray-800 mb-8 animate-fade-in-down">Crie sua conta</h1>
-        <form onSubmit={handleSubmit} className="space-y-6">
-          <div className="relative">
-            <label htmlFor="fullName" className="block text-lg font-semibold text-gray-700">Nome Completo</label>
-            <input
-              type="text"
-              name="fullName"
-              id="fullName"
-              value={formData.fullName}
-              onChange={handleChange}
-              className="mt-1 block w-full p-4 border border-gray-300 rounded-xl shadow-sm focus:ring-purple-600 focus:border-purple-600 transition duration-300"
-              placeholder="Digite seu nome completo"
-              required
-            />
-          </div>
-          <div className="relative">
-            <label htmlFor="email" className="block text-lg font-semibold text-gray-700">E-Mail</label>
-            <input
-              type="email"
-              name="email"
-              id="email"
-              value={formData.email}
-              onChange={handleChange}
-              className="mt-1 block w-full p-4 border border-gray-300 rounded-xl shadow-sm focus:ring-purple-600 focus:border-purple-600 transition duration-300"
-              placeholder="Digite seu e-mail"
-              required
-            />
-          </div>
-          <div className="relative">
-            <label htmlFor="phone" className="block text-lg font-semibold text-gray-700">Telefone</label>
-            <input
-              type="text"
-              name="phone"
-              id="phone"
-              value={formData.phone}
-              onChange={handleChange}
-              className="mt-1 block w-full p-4 border border-gray-300 rounded-xl shadow-sm focus:ring-purple-600 focus:border-purple-600 transition duration-300"
-              placeholder="Digite seu telefone"
-              required
-            />
-          </div>
-          <div className="relative">
-            <label htmlFor="cpf" className="block text-lg font-semibold text-gray-700">CPF</label>
-            <input
-              type="text"
-              name="cpf"
-              id="cpf"
-              value={formData.cpf}
-              onChange={handleChange}
-              className="mt-1 block w-full p-4 border border-gray-300 rounded-xl shadow-sm focus:ring-purple-600 focus:border-purple-600 transition duration-300"
-              placeholder="Digite seu CPF"
-              required
-            />
-          </div>
-          <div className="relative">
-            <label htmlFor="birthDate" className="block text-lg font-semibold text-gray-700">Data de Nascimento</label>
-            <input
-              type="date"
-              name="birthDate"
-              id="birthDate"
-              value={formData.birthDate}
-              onChange={handleChange}
-              className="mt-1 block w-full p-4 border border-gray-300 rounded-xl shadow-sm focus:ring-purple-600 focus:border-purple-600 transition duration-300"
-              required
-            />
-          </div>
-          <div className="relative">
-            <label htmlFor="password" className="block text-lg font-semibold text-gray-700">Senha</label>
-            <div className="relative">
-              <input
-                type={showPassword ? "text" : "password"}
-                name="password"
-                id="password"
-                value={formData.password}
-                onChange={handleChange}
-                className="mt-1 block w-full p-4 border border-gray-300 rounded-xl shadow-sm focus:ring-purple-600 focus:border-purple-600 transition duration-300"
-                placeholder="Digite sua senha"
-                required
-              />
-              <button
-                type="button"
-                className="absolute inset-y-0 right-4 flex items-center text-gray-500 hover:text-gray-700"
-                onClick={() => setShowPassword(!showPassword)}
-              >
-                {showPassword ? "Esconder" : "Mostrar"}
-              </button>
-            </div>
-          </div>
-          <div className="relative">
-            <label htmlFor="confirmPassword" className="block text-lg font-semibold text-gray-700">Confirmar Senha</label>
-            <div className="relative">
-              <input
-                type={showPassword ? "text" : "password"}
-                name="confirmPassword"
-                id="confirmPassword"
-                value={formData.confirmPassword}
-                onChange={handleChange}
-                className="mt-1 block w-full p-4 border border-gray-300 rounded-xl shadow-sm focus:ring-purple-600 focus:border-purple-600 transition duration-300"
-                placeholder="Confirme sua senha"
-                required
-              />
-            </div>
-          </div>
-          <div>
-            <button
-              type="submit"
-              className="w-full py-3 px-6 text-lg font-semibold text-white bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 rounded-xl shadow-lg transition duration-300 transform hover:scale-105 focus:outline-none focus:ring-4 focus:ring-purple-300 focus:ring-opacity-50"
-            >
-              Registrar
-            </button>
-          </div>
-        </form>
-      </div>
+    <div className="p-6">
+      <h1 className="text-2xl font-bold">Cadastrar Novo Inquilino</h1>
+      {errorMessage && <p className="text-red-500 mb-4">{errorMessage}</p>}
+      <form onSubmit={handleSubmit}>
+        <div className="mb-4">
+          <label>Nome Completo</label>
+          <input
+            type="text"
+            value={nome}
+            onChange={(e) => setNome(e.target.value)}
+            required
+            className="w-full p-2 border border-gray-300 rounded"
+          />
+        </div>
+        <div className="mb-4">
+          <label>E-mail</label>
+          <input
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            required
+            className="w-full p-2 border border-gray-300 rounded"
+          />
+        </div>
+        <div className="mb-4">
+          <label>Telefone</label>
+          <input
+            type="text"
+            value={telefone}
+            onChange={(e) => setTelefone(e.target.value)}
+            required
+            className="w-full p-2 border border-gray-300 rounded"
+          />
+        </div>
+        <div className="mb-4">
+          <label>CPF</label>
+          <input
+            type="text"
+            value={cpf}
+            onChange={(e) => setCpf(e.target.value)}
+            required
+            className="w-full p-2 border border-gray-300 rounded"
+          />
+        </div>
+        <div className="mb-4">
+          <label>Data de Nascimento</label>
+          <input
+            type="date"
+            value={dataNascimento}
+            onChange={(e) => setDataNascimento(e.target.value)}
+            required
+            className="w-full p-2 border border-gray-300 rounded"
+          />
+        </div>
+        <button type="submit" className="bg-blue-500 text-white px-4 py-2 rounded">
+          Cadastrar Inquilino
+        </button>
+      </form>
     </div>
   );
-};
-
-export default RegisterTenant;
+}
