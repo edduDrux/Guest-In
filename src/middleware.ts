@@ -1,4 +1,3 @@
-// src/middleware.ts
 export { default } from "next-auth/middleware";
 
 export const config = {
@@ -6,6 +5,5 @@ export const config = {
     "/perfil-administrador/:path*",
     "/cadastro-inquilino/:path*",
     "/cadastro-imovel/:path*",
-    // Outras rotas protegidas
   ],
 };

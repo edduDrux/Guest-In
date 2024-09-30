@@ -3,7 +3,7 @@
 import { signOut, useSession } from "next-auth/react";
 import { useState } from "react";
 import useSWR from "swr";
-import { useRouter } from "next/router"; // Adicionado para redirecionar
+import { useRouter } from "next/router"; 
 
 // Define a interface para o objeto Funcionario
 interface Funcionario {
@@ -19,7 +19,7 @@ const fetcher = (url: string) =>
 
 export default function PerfilAdministrador() {
   const { data: session, status } = useSession();
-  const router = useRouter(); // Adicionado para redirecionar
+  const router = useRouter();
 
   const { data: funcionarios, error, mutate } = useSWR(
     "/api/funcionarios",
