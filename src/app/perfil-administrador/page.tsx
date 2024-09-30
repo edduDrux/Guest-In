@@ -3,9 +3,9 @@
 import { signOut, useSession } from "next-auth/react";
 import { useState } from "react";
 import useSWR from "swr";
-import { useRouter } from "next/router"; 
+import { useRouter } from "next/navigation"; // Correção no uso de useRouter
 
-// Define a interface para o objeto Funcionario
+// Interface para o objeto Funcionario
 interface Funcionario {
   id: number;
   nome: string;
@@ -13,101 +13,77 @@ interface Funcionario {
   telefone?: string;
 }
 
-// Função para buscar os funcionários da API
-const fetcher = (url: string) =>
-  fetch(url, { cache: "no-store" }).then((res) => res.json());
+// Interface para o objeto Imovel
+interface Imovel {
+  id: number;
+  nome: string;
+  endereco: string;
+  tipo: string;
+}
+
+// Interface para o objeto Inquilino
+interface Inquilino {
+  nome: string;
+  email: string;
+  telefone: string;
+  cpf: string;
+}
+
+// Função para buscar os dados da API
+const fetcher = (url: string) => fetch(url, { cache: "no-store" }).then((res) => res.json());
 
 export default function PerfilAdministrador() {
   const { data: session, status } = useSession();
   const router = useRouter();
 
-  const { data: funcionarios, error, mutate } = useSWR(
-    "/api/funcionarios",
-    fetcher
-  );
+  // Buscar dados dos funcionários e imóveis
+  const { data: funcionarios, error: errorFuncionarios, mutate: mutateFuncionarios } = useSWR("/api/funcionarios", fetcher);
+  const { data: imoveis, error: errorImoveis, mutate: mutateImoveis } = useSWR("/api/imoveis", fetcher);
 
-  const [nome, setNome] = useState("");
-  const [email, setEmail] = useState("");
-  const [telefone, setTelefone] = useState("");
-  const [senha, setSenha] = useState("");
-  const [editingId, setEditingId] = useState<number | null>(null); // Adicionado para edição
-  const [errorMessage, setErrorMessage] = useState(""); // Estado para erros no cadastro
-  const [deleteMessage, setDeleteMessage] = useState(""); // Estado para mensagem ao deletar
+  const [inquilino, setInquilino] = useState<Inquilino>({
+    nome: "",
+    email: "",
+    telefone: "",
+    cpf: "",
+  });
+
+  const [imovelSelecionado, setImovelSelecionado] = useState<number | null>(null);
+  const [errorMessage, setErrorMessage] = useState(""); // Estado para erros no cadastro de inquilino
+  const [successMessage, setSuccessMessage] = useState(""); // Estado para mensagens de sucesso
 
   if (status === "loading") {
     return <p>Carregando...</p>;
   }
 
   if (status === "unauthenticated") {
-    router.push("/login"); // Redireciona para a página de login se não autenticado
+    router.push("/login");
     return null;
   }
 
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+  const handleInquilinoSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
-    // Validação básica
-    if (!nome || !email || !telefone || !senha) {
-      setErrorMessage("Por favor, preencha todos os campos.");
-      return;
-    }
-
-    // Validação de e-mail simples
-    const emailRegex = /\S+@\S+\.\S+/;
-    if (!emailRegex.test(email)) {
-      setErrorMessage("Por favor, insira um e-mail válido.");
+    if (!inquilino.nome || !inquilino.email || !inquilino.telefone || !inquilino.cpf || !imovelSelecionado) {
+      setErrorMessage("Por favor, preencha todos os campos e selecione um imóvel.");
       return;
     }
 
     try {
-      const method = editingId ? "PUT" : "POST";
-      const url = editingId ? `/api/funcionarios?id=${editingId}` : "/api/funcionarios";
-
-      const response = await fetch(url, {
-        method,
+      const response = await fetch("/api/inquilinos", {
+        method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ nome, email, telefone, senha }),
+        body: JSON.stringify({ ...inquilino, imovelId: imovelSelecionado }),
       });
 
-      const data = await response.json();
-
       if (response.ok) {
-        mutate(); // Atualiza a lista de funcionários após o cadastro
-        setNome("");
-        setEmail("");
-        setTelefone("");
-        setSenha("");
-        setErrorMessage(""); // Limpa mensagem de erro se bem-sucedido
-        setEditingId(null); // Resetar o ID após edição
+        setSuccessMessage("Inquilino cadastrado com sucesso.");
+        setInquilino({ nome: "", email: "", telefone: "", cpf: "" });
+        setImovelSelecionado(null);
       } else {
-        setErrorMessage(data.error || "Erro ao cadastrar funcionário.");
+        setErrorMessage("Erro ao cadastrar inquilino.");
       }
     } catch (error) {
       setErrorMessage("Erro de rede. Tente novamente.");
-    }
-  };
-
-  const handleEdit = (funcionario: Funcionario) => {
-    setNome(funcionario.nome);
-    setEmail(funcionario.email);
-    setTelefone(funcionario.telefone || "");
-    setEditingId(funcionario.id);
-  };
-
-  const handleDelete = async (id: number) => {
-    try {
-      const response = await fetch(`/api/funcionarios?id=${id}`, {
-        method: "DELETE",
-      });
-
-      if (response.ok) {
-        mutate(); // Atualiza a lista após a remoção
-        setDeleteMessage("Funcionário removido com sucesso.");
-      } else {
-        setDeleteMessage("Erro ao remover funcionário.");
-      }
-    } catch (error) {
-      setDeleteMessage("Erro de rede ao remover funcionário.");
     }
   };
 
@@ -121,18 +97,36 @@ export default function PerfilAdministrador() {
         Sair
       </button>
 
+      {/* Exibição dos imóveis cadastrados */}
       <div className="mt-8">
-        <h2 className="text-xl font-bold mb-4">
-          {editingId ? "Editar Funcionário" : "Cadastrar Novo Funcionário"}
-        </h2>
+        <h2 className="text-xl font-bold mb-4">Imóveis Cadastrados</h2>
+        {errorImoveis && <p className="text-red-500">Erro ao carregar imóveis.</p>}
+        {!imoveis ? (
+          <p>Carregando imóveis...</p>
+        ) : (
+          <ul>
+            {imoveis.map((imovel: Imovel) => (
+              <li key={imovel.id} className="mb-2">
+                {imovel.nome} - {imovel.endereco} ({imovel.tipo})
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+
+      {/* Formulário de cadastro de inquilinos */}
+      <div className="mt-8">
+        <h2 className="text-xl font-bold mb-4">Cadastrar Inquilino no Imóvel</h2>
         {errorMessage && <p className="text-red-500 mb-4">{errorMessage}</p>}
-        <form onSubmit={handleSubmit}>
+        {successMessage && <p className="text-green-500 mb-4">{successMessage}</p>}
+
+        <form onSubmit={handleInquilinoSubmit}>
           <div className="mb-4">
-            <label>Nome Completo</label>
+            <label>Nome do Inquilino</label>
             <input
               type="text"
-              value={nome}
-              onChange={(e) => setNome(e.target.value)}
+              value={inquilino.nome}
+              onChange={(e) => setInquilino({ ...inquilino, nome: e.target.value })}
               required
               className="w-full p-2 border border-gray-300 rounded"
             />
@@ -141,8 +135,8 @@ export default function PerfilAdministrador() {
             <label>E-mail</label>
             <input
               type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              value={inquilino.email}
+              onChange={(e) => setInquilino({ ...inquilino, email: e.target.value })}
               required
               className="w-full p-2 border border-gray-300 rounded"
             />
@@ -151,55 +145,44 @@ export default function PerfilAdministrador() {
             <label>Telefone</label>
             <input
               type="text"
-              value={telefone}
-              onChange={(e) => setTelefone(e.target.value)}
+              value={inquilino.telefone}
+              onChange={(e) => setInquilino({ ...inquilino, telefone: e.target.value })}
               required
               className="w-full p-2 border border-gray-300 rounded"
             />
           </div>
           <div className="mb-4">
-            <label>Senha</label>
+            <label>CPF</label>
             <input
-              type="password"
-              value={senha}
-              onChange={(e) => setSenha(e.target.value)}
+              type="text"
+              value={inquilino.cpf}
+              onChange={(e) => setInquilino({ ...inquilino, cpf: e.target.value })}
               required
               className="w-full p-2 border border-gray-300 rounded"
             />
           </div>
+          <div className="mb-4">
+            <label>Selecione o Imóvel</label>
+            <select
+              value={imovelSelecionado || ""}
+              onChange={(e) => setImovelSelecionado(Number(e.target.value))}
+              required
+              className="w-full p-2 border border-gray-300 rounded"
+            >
+              <option value="" disabled>
+                Selecione um imóvel
+              </option>
+              {imoveis?.map((imovel: Imovel) => (
+                <option key={imovel.id} value={imovel.id}>
+                  {imovel.nome} - {imovel.endereco}
+                </option>
+              ))}
+            </select>
+          </div>
           <button type="submit" className="bg-blue-500 text-white px-4 py-2 rounded">
-            {editingId ? "Salvar Alterações" : "Cadastrar Funcionário"}
+            Cadastrar Inquilino
           </button>
         </form>
-      </div>
-
-      <div className="mt-8">
-        <h2 className="text-xl font-bold mb-4">Funcionários Cadastrados</h2>
-        {deleteMessage && <p className="text-green-500 mb-4">{deleteMessage}</p>}
-        {error && <p className="text-red-500">Erro ao carregar funcionários</p>}
-        {!funcionarios ? (
-          <p>Carregando funcionários...</p>
-        ) : (
-          <ul>
-            {funcionarios.map((funcionario: Funcionario) => (
-              <li key={funcionario.id} className="mb-2">
-                {funcionario.nome} - {funcionario.email}
-                <button
-                  onClick={() => handleEdit(funcionario)}
-                  className="ml-4 bg-yellow-500 text-white py-1 px-2 rounded"
-                >
-                  Editar
-                </button>
-                <button
-                  onClick={() => handleDelete(funcionario.id)}
-                  className="ml-4 bg-red-500 text-white py-1 px-2 rounded"
-                >
-                  Remover
-                </button>
-              </li>
-            ))}
-          </ul>
-        )}
       </div>
     </div>
   );

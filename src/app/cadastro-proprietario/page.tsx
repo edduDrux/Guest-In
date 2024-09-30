@@ -2,9 +2,11 @@
 
 import React, { useState } from 'react';
 import { FiUser, FiMail, FiPhone, FiLock, FiHome, FiMapPin } from 'react-icons/fi';
-
+import { useRouter } from 'next/navigation'; // Ajuste: import correto no App Router
 
 export default function CadastroProprietario() {
+  const router = useRouter(); // Hook correto para o App Router
+
   const [formData, setFormData] = useState({
     nomeCompleto: '',
     email: '',
@@ -85,7 +87,8 @@ export default function CadastroProprietario() {
       });
 
       if (response.ok) {
-        window.location.href = '/login';
+        // Redireciona para o perfil do administrador após cadastro bem-sucedido
+        router.push('/perfil-administrador');
       } else {
         const errorData = await response.json();
         alert(errorData.error || 'Erro ao cadastrar.');
@@ -101,12 +104,7 @@ export default function CadastroProprietario() {
       <div className="max-w-md w-full space-y-8">
         {/* Cabeçalho */}
         <div>
-          {/* <Image
-            src="https://drive.google.com/file/d/1Uqxdv3My-RtdHFx1kADgyPloBaDAKg0W/view?usp=drive_link"
-            alt="Sua Logo"
-            width={64}  // ajuste o tamanho de acordo com a necessidade
-            height={64}
-          /> */}
+          {/* <Image src="your_logo_link" alt="Sua Logo" width={64} height={64} /> */}
         </div>
         <h2 className="text-center text-5xl font-extrabold text-WHITE">
             GUEST-IN

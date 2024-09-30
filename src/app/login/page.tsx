@@ -25,7 +25,7 @@ export default function LoginPage() {
 
   return (
     <div className="flex items-center justify-center h-screen bg-gray-100">
-      <form onSubmit={handleSubmit} className="p-6 bg-white rounded shadow-md space-y-4">
+      <form onSubmit={handleSubmit} className="p-6 bg-black rounded shadow-md space-y-4">
         <h2 className="text-2xl font-bold text-center">Login</h2>
         <div>
           <label className="block text-sm">E-mail</label>
@@ -33,7 +33,7 @@ export default function LoginPage() {
             type="email"
             value={userInfo.email}
             onChange={(e) => setUserInfo({ ...userInfo, email: e.target.value })}
-            className="w-full px-3 py-2 border rounded"
+            className="w-full px-3 py-2 border rounded text-black"
             required
           />
         </div>
@@ -43,7 +43,7 @@ export default function LoginPage() {
             type="password"
             value={userInfo.password}
             onChange={(e) => setUserInfo({ ...userInfo, password: e.target.value })}
-            className="w-full px-3 py-2 border rounded"
+            className="w-full px-3 py-2 border rounded text-black"
             required
           />
         </div>
