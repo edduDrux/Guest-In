@@ -1,7 +1,7 @@
-"use client"; // Adiciona a diretiva para Client Component
+"use client"; // Diretiva para Client Component
 
-import { useState, useEffect } from 'react'; // Importar useState e useEffect do React
-import { useRouter } from 'next/navigation'; // Usando o novo `useRouter` do App Router
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 
 type Imovel = {
   id: number;
@@ -12,27 +12,39 @@ type Imovel = {
 };
 
 async function fetchImoveis() {
-  const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/imoveis`, {
-    cache: 'no-store', // Garantir que estamos sempre pegando dados atualizados
-  });
+  try {
+    // Fazer a requisição para a API que criamos
+    const response = await fetch('/api/imoveis', {
+      cache: 'no-store', // Garantir que estamos sempre pegando dados atualizados
+    });
 
-  if (!response.ok) {
-    throw new Error('Failed to fetch imóveis');
+    if (!response.ok) {
+      throw new Error('Failed to fetch imóveis');
+    }
+
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error("Erro ao buscar imóveis:", error);
+    throw error;
   }
-
-  return response.json();
 }
 
 export default function ImoveisPage() {
   const router = useRouter();
 
-  // Fetching de dados dentro de um useEffect para evitar problemas com SSR
   const [imoveis, setImoveis] = useState<Imovel[]>([]);
+  const [error, setError] = useState<string | null>(null); // Adicionar um estado para erro
 
   useEffect(() => {
     const fetchData = async () => {
-      const data = await fetchImoveis();
-      setImoveis(data);
+      try {
+        const data = await fetchImoveis();
+        setImoveis(data); // Atualiza o estado com os dados dos imóveis
+      } catch (err) {
+        console.error("Erro ao buscar imóveis:", err);
+        setError("Erro ao carregar imóveis. Por favor, tente novamente.");
+      }
     };
     fetchData();
   }, []);
@@ -41,7 +53,9 @@ export default function ImoveisPage() {
     <div className="container mx-auto p-6">
       <h1 className="text-4xl font-extrabold text-center mb-8">Imóveis Cadastrados</h1>
 
-      {imoveis.length === 0 ? (
+      {error ? (
+        <p className="text-center text-red-500">{error}</p> // Exibir mensagem de erro, se houver
+      ) : imoveis.length === 0 ? (
         <p className="text-center text-gray-500">Nenhum imóvel cadastrado.</p>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">

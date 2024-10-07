@@ -3,7 +3,6 @@ import type { NextAuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import { PrismaAdapter } from "@next-auth/prisma-adapter";
 import { prisma } from "../../../lib/prisma";
-import { compare } from "bcryptjs";
 
 export const authOptions: NextAuthOptions = {
   adapter: PrismaAdapter(prisma),
@@ -15,24 +14,29 @@ export const authOptions: NextAuthOptions = {
         password: { label: "Senha", type: "password" },
       },
       async authorize(credentials) {
+        console.log("Tentativa de login com:", credentials);
+
         if (!credentials?.email || !credentials.password) {
           throw new Error("Por favor, preencha ambos os campos.");
         }
 
+        // Busca o usuário pelo e-mail
         const user = await prisma.proprietario.findUnique({
           where: { email: credentials.email },
         });
 
         if (!user) {
+          console.log("Nenhum usuário encontrado.");
           throw new Error("Nenhum usuário encontrado com este e-mail.");
         }
 
-        const isValidPassword = await compare(credentials.password, user.senha);
-
-        if (!isValidPassword) {
+        // Compara a senha diretamente (sem hash)
+        if (credentials.password.trim() !== user.senha.trim()) {
+          console.log("Senha incorreta.");
           throw new Error("Senha incorreta.");
         }
 
+        console.log("Login bem-sucedido:", user);
         return {
           id: user.id,
           nomeCompleto: user.nomeCompleto,
@@ -46,6 +50,7 @@ export const authOptions: NextAuthOptions = {
   },
   pages: {
     signIn: "/login",
+    error: "/login?error=true", // Redireciona para a página de login com um erro
   },
   callbacks: {
     async jwt({ token, user }) {
@@ -63,7 +68,7 @@ export const authOptions: NextAuthOptions = {
       return session;
     },
   },
-  
+  debug: true, // Habilita o modo de depuração
 };
 
 const handler = NextAuth(authOptions);

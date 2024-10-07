@@ -1,8 +1,5 @@
 import { NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
-import bcrypt from 'bcrypt';
-
-const prisma = new PrismaClient();
+import { prisma } from '../../../lib/prisma';
 
 export async function POST(request: Request) {
   try {
@@ -19,17 +16,20 @@ export async function POST(request: Request) {
       senha,
     } = data;
 
-    // Verificar se o e-mail já está cadastrado
-    const existingUser = await prisma.proprietario.findUnique({
-      where: { email },
+    // Verificar se o e-mail, CPF ou CNPJ já estão cadastrados
+    const existingUser = await prisma.proprietario.findFirst({
+      where: {
+        OR: [
+          { email },
+          { cpf },
+          { cnpj },
+        ],
+      },
     });
 
     if (existingUser) {
-      return NextResponse.json({ error: 'E-mail já cadastrado.' }, { status: 400 });
+      return NextResponse.json({ error: 'E-mail, CPF ou CNPJ já cadastrados.' }, { status: 400 });
     }
-
-    // Hash da senha
-    const hashedPassword = await bcrypt.hash(senha, 10);
 
     // Salvando no banco de dados
     const proprietario = await prisma.proprietario.create({
@@ -41,13 +41,13 @@ export async function POST(request: Request) {
         cnpj,
         nomeImobiliaria,
         enderecoImobiliaria,
-        senha: hashedPassword,
+        senha,
       },
     });
 
-    return NextResponse.json({ success: true }, { status: 201 });
+    return NextResponse.json({ success: true, proprietario }, { status: 201 });
   } catch (error) {
-    console.error(error);
-    return NextResponse.json({ error: 'Erro interno no servidor' }, { status: 500 });
+    console.error('Erro ao cadastrar proprietário:', error);
+    return NextResponse.json({ error: 'Erro ao cadastrar proprietário. Tente novamente.' }, { status: 500 });
   }
 }

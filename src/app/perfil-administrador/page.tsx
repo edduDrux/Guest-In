@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { FiUserPlus, FiHome, FiUser, FiEye } from 'react-icons/fi';
 import { AiOutlineLoading3Quarters } from 'react-icons/ai';
 
+// Modal de Cadastro de Funcionário
 function CadastroFuncionarioModal({ onClose }: { onClose: () => void }) {
   const [formData, setFormData] = useState({
     nome: '',
@@ -121,7 +122,7 @@ function CadastroFuncionarioModal({ onClose }: { onClose: () => void }) {
   );
 }
 
-// Modal de cadastro de Inquilino
+// Modal de Cadastro de Inquilino
 function CadastroInquilinoModal({ onClose }: { onClose: () => void }) {
   const [formData, setFormData] = useState({
     nome: '',
@@ -129,7 +130,7 @@ function CadastroInquilinoModal({ onClose }: { onClose: () => void }) {
     telefone: '',
     cpf: '',
     dataNascimento: '',
-    senha: '',
+    senha: '', // A senha não será necessária, pois será gerada automaticamente
   });
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -142,18 +143,21 @@ function CadastroInquilinoModal({ onClose }: { onClose: () => void }) {
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    console.log("Dados do inquilino enviados:", formData); // Log dos dados enviados para depuração
+
     try {
       const response = await fetch('/api/inquilinos', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData),
+        body: JSON.stringify(formData), // Envia os dados do inquilino para o backend
       });
 
       if (response.ok) {
         alert('Inquilino cadastrado com sucesso!');
         onClose();
       } else {
-        alert('Erro ao cadastrar o inquilino.');
+        const errorData = await response.json();
+        alert(`Erro ao cadastrar o inquilino: ${errorData.error}`);
       }
     } catch (error) {
       console.error('Erro ao cadastrar o inquilino:', error);
@@ -233,14 +237,13 @@ function CadastroInquilinoModal({ onClose }: { onClose: () => void }) {
   );
 }
 
-// Modal de cadastro de Imóvel
+
 function CadastroImovelModal({ onClose }: { onClose: () => void }) {
   const [formData, setFormData] = useState({
     nomeImovel: '',
     tipoPropriedade: 'Residencial',
     endereco: '',
     tamanho: '',
-    proprietarioId: '',
   });
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
@@ -253,6 +256,8 @@ function CadastroImovelModal({ onClose }: { onClose: () => void }) {
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    console.log("Dados do imóvel enviados:", formData); // Log dos dados
+
     try {
       const response = await fetch('/api/imoveis', {
         method: 'POST',
@@ -264,7 +269,8 @@ function CadastroImovelModal({ onClose }: { onClose: () => void }) {
         alert('Imóvel cadastrado com sucesso!');
         onClose();
       } else {
-        alert('Erro ao cadastrar o imóvel.');
+        const errorData = await response.json();
+        alert(`Erro ao cadastrar o imóvel: ${errorData.error}`);
       }
     } catch (error) {
       console.error('Erro ao cadastrar o imóvel:', error);
@@ -273,10 +279,10 @@ function CadastroImovelModal({ onClose }: { onClose: () => void }) {
   };
 
   return (
-    <div className="fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center text-black">
+    <div className="fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center">
       <div className="bg-white p-6 rounded-lg shadow-lg w-1/2 relative">
         <button onClick={onClose} className="absolute top-2 right-2 text-red-500 font-bold">X</button>
-        <h1 className="text-2xl font-bold mb-4 text-black">Cadastro de Imóvel</h1>
+        <h1 className="text-2xl font-bold mb-4">Cadastro de Imóvel</h1>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label>Nome do Imóvel</label>
@@ -334,6 +340,7 @@ function CadastroImovelModal({ onClose }: { onClose: () => void }) {
     </div>
   );
 }
+
 
 export default function PerfilAdministrador() {
   const [isFuncionarioModalOpen, setFuncionarioModalOpen] = useState(false);

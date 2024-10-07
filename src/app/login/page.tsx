@@ -11,15 +11,18 @@ export default function LoginPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const res = await signIn("credentials", {
-      email: userInfo.email,
-      password: userInfo.password,
+      email: userInfo.email.trim(), // Remove espaços no e-mail
+      password: userInfo.password.trim(), // Remove espaços na senha
       redirect: false,
     });
 
+    console.log("Resposta do login:", res); // Log da resposta do login
+
     if (res?.error) {
-      alert("Erro no login: " + res.error);
+      console.log("Erro no login:", res.error); // Exibe o erro no console
+      alert("Erro no login: " + res.error); // Mostra o erro no alerta
     } else {
-      router.push("/perfil-administrador");
+      router.push("/perfil-administrador"); // Redireciona para o perfil do administrador
     }
   };
 

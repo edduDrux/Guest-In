@@ -86,7 +86,7 @@ model Inquilino {
 }
 
 model Imovel {
-  id             Int      @id @default(autoincrement())
+  id             Int          @id @default(autoincrement())
   nomeImovel     String
   tipoPropriedade String
   endereco       String
@@ -94,6 +94,7 @@ model Imovel {
   proprietario   Proprietario @relation(fields: [proprietarioId], references: [id])
   proprietarioId Int
 
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
 }
+
